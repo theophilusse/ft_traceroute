@@ -18,6 +18,7 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
     uint8_t         buf[1024];
     ssize_t         n;
     struct timeval  sent[opts->s_queries];
+    struct timeval zero = {0, 0};
 
     int base_port = opts->port;
     while (hops <= opts->max_ttl)
@@ -28,6 +29,16 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
             rtt[i] = -1;
         for (int i = 0; i < opts->s_queries; i++)
             received[i] = 0;
+
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(sockin, &fds);
+        while (select(sockin + 1, &fds, NULL, NULL, &zero) > 0)
+        {
+            recv_packet(sockin, buf, sizeof(buf), from);
+            FD_ZERO(&fds);
+            FD_SET(sockin, &fds);
+        }
 
         // PHASE 1 : envoyer toutes les sondes
         for (int i = 0; i < opts->s_queries; i++)
@@ -50,7 +61,6 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
             timeout.tv_usec = deadline.tv_usec - now.tv_usec;
             if (timeout.tv_sec < 0 || (timeout.tv_sec == 0 && timeout.tv_usec <= 0))
                 break;
-            fd_set fds;
             FD_ZERO(&fds);
             FD_SET(sockin, &fds);
             if (select(sockin + 1, &fds, NULL, NULL, &timeout) <= 0)
@@ -58,8 +68,18 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
             n = recv_packet(sockin, buf, sizeof(buf), from);
             if (n > 0)
             {
+                t_ip   *ip_outer = (t_ip *)buf;
+                t_icmp *icmp     = (t_icmp *)(buf + ip_outer->ihl * 4);
+                t_ip   *ip_inner = (t_ip *)((uint8_t *)icmp + sizeof(t_icmp));
+
+                // vérifier que c'est bien notre paquet
+                if (ip_inner->src != g_opts.local_ip.s_addr)
+                    continue;
+
                 int port_recu = parse_get_port(buf);
                 int idx = port_recu - base_port;
+                if (idx < 0 || idx >= opts->s_queries)
+                    continue;
                 if (idx >= 0 && idx < opts->s_queries && !received[idx])
                 {
                     received[idx] = 1;
@@ -78,8 +98,6 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
         else
             print_reply(from, rtt, n, opts);
         base_port += opts->s_queries;
-        fd_set fds;
-        struct timeval zero = {0, 0};
         FD_ZERO(&fds);
         FD_SET(sockin, &fds);
         while (select(sockin + 1, &fds, NULL, NULL, &zero) > 0)
