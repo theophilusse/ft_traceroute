@@ -25,6 +25,8 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
     {
         printf("%2d  ", hops);
         memset(from, 0, sizeof(*from));
+        struct sockaddr_in valid_from;
+        memset(&valid_from, 0, sizeof(valid_from));
         for (int i = 0; i < opts->s_queries; i++)
             rtt[i] = -1;
         for (int i = 0; i < opts->s_queries; i++)
@@ -82,6 +84,7 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
                     continue;
                 if (idx >= 0 && idx < opts->s_queries && !received[idx])
                 {
+                    valid_from = *from;
                     received[idx] = 1;
                     rtt[idx] = compute_rtt(&sent[idx]);
                     total_received++;
@@ -93,10 +96,10 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
                 }
             }
         }
-        if (from->sin_addr.s_addr == 0)
+        if (valid_from.sin_addr.s_addr == 0)
             printf("* * *\n");
         else
-            print_reply(from, rtt, n, opts);
+            print_reply(&valid_from, rtt, n, opts);
         base_port += opts->s_queries;
         FD_ZERO(&fds);
         FD_SET(sockin, &fds);
