@@ -47,18 +47,13 @@ int     main(int argc, char **argv)
         return (1);
     }
 
-    // -- affichage entête
-    printf("traceroute to %s (%s), 64 hops max, %d byte packets\n",
-        g_opts.hostname, inet_ntoa(dest.sin_addr), 64);
-
     dest.sin_port = htons(33435);
-    // connect "virtuel" pour que le kernel choisisse l'interface
     if (connect(socketout, (struct sockaddr *)&dest, sizeof(dest)) < 0)
     {
         fprintf(stderr, "ft_traceroute: connect: %s\n", strerror(errno));
         return (1);
     }
-    GET_LOCAL_IP(g_opts.local_ip);
+    GET_LOCAL_IP(g_opts.local_ip);  // ← après connect
     if (g_opts.verbose)
         printf("Using interface: %s\n", g_opts.iface ? g_opts.iface : g_opts.iface_name);
     struct sockaddr unspec;
@@ -66,6 +61,10 @@ int     main(int argc, char **argv)
     unspec.sa_family = AF_UNSPEC;
     connect(socketout, &unspec, sizeof(unspec));
     dest.sin_port = 0;
+
+    // -- affichage entête
+    printf("traceroute to %s (%s), 64 hops max, %d byte packets\n",
+        g_opts.hostname, inet_ntoa(dest.sin_addr), 64);
 
     // -- boucle
     traceroute_loop(socketin, socketout, &from, &dest, &g_opts);

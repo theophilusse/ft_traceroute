@@ -23,7 +23,7 @@
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) { \
             struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr; \
             if (sa->sin_addr.s_addr != htonl(INADDR_LOOPBACK)) { \
-                (ip) = sa->sin_addr; g_opts.iface_name = ifa->ifa_name; break; } } } \
+                (ip) = sa->sin_addr; g_opts.iface_name = strdup(ifa->ifa_name); break; } } } \
     freeifaddrs(ifap); \
 } while(0)
 #  define BIND_IFACE(fd, iface) setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, iface, strlen(iface))
@@ -36,7 +36,7 @@
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) { \
             struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr; \
             if (sa->sin_addr.s_addr != htonl(INADDR_LOOPBACK)) { \
-                (ip) = sa->sin_addr; g_opts.iface_name = ifa->ifa_name; break; } } } \
+                (ip) = sa->sin_addr; g_opts.iface_name = strdup(ifa->ifa_name); break; } } } \
     freeifaddrs(ifap); \
 } while(0)
 #  define BIND_IFACE(fd, iface) ({ \
@@ -55,7 +55,7 @@ int     create_socket_icmp(t_opts *opts);
 int     create_socket_udp(t_opts *opts);
 void    send_probe(int sockfd, struct sockaddr_in *dest, int ttl, int dst_port);
 ssize_t recv_packet(int sockfd, uint8_t *buf, size_t buf_size, struct sockaddr_in *from);
-int     parse_reply(uint8_t *buf, uint16_t dst_port_sent);
+int     parse_reply(uint8_t *buf, uint16_t dst_port_sent, int hops);
 double  compute_rtt(struct timeval *sent);
 void    print_reply(struct sockaddr_in *from, double *rtt, ssize_t bytes, t_opts *opts);
 void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,

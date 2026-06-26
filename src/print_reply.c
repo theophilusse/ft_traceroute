@@ -5,10 +5,7 @@ void print_reply(struct sockaddr_in *from, double *rtt, ssize_t bytes, t_opts *o
     char server[NI_MAXHOST];
 
     if (getnameinfo((struct sockaddr *)from, sizeof(*from), server, NI_MAXHOST, NULL, 0, 0) != 0)
-    {
-        memcpy(server, inet_ntoa(from->sin_addr), NI_MAXHOST);
-        server[NI_MAXHOST - 1] = '\0';
-    }
+        inet_ntop(AF_INET, &from->sin_addr, server, NI_MAXHOST);
     char from_ip[INET_ADDRSTRLEN];
     char local_ip[INET_ADDRSTRLEN];
 

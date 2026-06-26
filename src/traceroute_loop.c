@@ -65,7 +65,7 @@ void    traceroute_loop(int sockin, int sockout, struct sockaddr_in *from,
                     received[idx] = 1;
                     rtt[idx] = compute_rtt(&sent[idx]);
                     total_received++;
-                    if (parse_reply(buf, port_recu) == 1)
+                    if (parse_reply(buf, port_recu, hops) == 1)
                     {
                         reached = 1;
                         break;
