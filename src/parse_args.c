@@ -35,7 +35,7 @@ t_opts  parse_args(int argc, char **argv)
 			case 'i':
 				opts.iface = argv[optind - 1];
 				break;
-			case 'm': /* convertir optarg en int, valider les bornes */
+			case 'm':
 				opts.max_ttl = atoi(optarg);
 				if (opts.max_ttl < 0 || opts.max_ttl > 255)
 				{
